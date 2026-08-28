@@ -123,6 +123,8 @@ const CardNav = ({
       links: [
         { label: 'Home', page: 'home' },
         { label: 'Compare', page: 'compare' },
+        { label: 'Global Stats 🌍', page: 'cfstats' },
+        { label: 'Graph Editor 🕸️', page: 'graph-editor' },
         { label: 'Profile', page: 'profile' },
       ],
     },
