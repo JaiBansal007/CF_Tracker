@@ -4,23 +4,31 @@ import { codeforcesAPI } from '../services/codeforcesApi';
 
 const ratings = Array.from({ length: 28 }, (_, index) => 800 + index * 100);
 
-const fetchProblem = (rating, excludeIds = []) => codeforcesAPI.getRandomMindSolveProblem({
+const fetchProblem = (rating, excludeIds = [], sources = ['problemset', 'gym']) => codeforcesAPI.getRandomMindSolveProblem({
   rating: rating ? Number(rating) : undefined,
   excludeIds,
+  sources,
 });
 
 export default function MindSolve() {
   const [rating, setRating] = useState('');
+  const [selectedSources, setSelectedSources] = useState(['problemset', 'gym']);
   const [problem, setProblem] = useState(null);
   const [seenProblemIds, setSeenProblemIds] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   const loadProblem = async (excludeIds = []) => {
+    if (!selectedSources.length) {
+      setError('Select at least one problem source.');
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     setError('');
     try {
-      const nextProblem = await fetchProblem(rating, excludeIds);
+      const nextProblem = await fetchProblem(rating, excludeIds, selectedSources);
       setProblem(nextProblem);
     } catch (loadError) {
       setError(loadError.message || 'Could not find a problem right now. Please try again.');
@@ -29,9 +37,12 @@ export default function MindSolve() {
     }
   };
 
+  const sourceKey = [...selectedSources].sort().join(',');
+
   useEffect(() => {
+    if (!sourceKey) return undefined;
     let cancelled = false;
-    fetchProblem(rating).then(nextProblem => {
+    fetchProblem(rating, [], sourceKey.split(',')).then(nextProblem => {
       if (!cancelled) setProblem(nextProblem);
     }).catch(loadError => {
       if (!cancelled) setError(loadError.message || 'Could not find a problem right now. Please try again.');
@@ -39,7 +50,18 @@ export default function MindSolve() {
       if (!cancelled) setLoading(false);
     });
     return () => { cancelled = true; };
-  }, [rating]);
+  }, [rating, sourceKey]);
+
+  const updateSource = (source, checked) => {
+    const nextSources = checked
+      ? [...selectedSources, source]
+      : selectedSources.filter(selectedSource => selectedSource !== source);
+    setSelectedSources(nextSources);
+    setProblem(null);
+    setSeenProblemIds([]);
+    setError(nextSources.length ? '' : 'Select at least one problem source.');
+    setLoading(nextSources.length > 0);
+  };
 
   const skipProblem = () => {
     const currentId = problem ? `${problem.contestId}${problem.index}` : null;
@@ -69,24 +91,56 @@ export default function MindSolve() {
           </p>
         </div>
 
-        <label className="flex shrink-0 flex-col gap-1.5 text-xs text-gray-400">
-          Problem rating
-          <select
-            value={rating}
-            onChange={event => {
-              setRating(event.target.value);
-              setProblem(null);
-              setSeenProblemIds([]);
-              setError('');
-              setLoading(true);
-            }}
-            className="h-10 min-w-40 rounded-md border border-white/10 bg-[#101312] px-3 text-sm text-gray-100 outline-none focus:border-emerald-400/60"
-          >
-            <option value="">Any rating</option>
-            {ratings.map(value => <option key={value} value={value}>{value}</option>)}
-          </select>
-        </label>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
+          <fieldset className="flex flex-col gap-2 text-xs text-gray-400">
+            <legend className="mb-1">Problem source</legend>
+            <div className="flex h-10 items-center gap-4">
+              <label className="flex cursor-pointer items-center gap-2 text-sm text-gray-200">
+                <input
+                  type="checkbox"
+                  checked={selectedSources.includes('problemset')}
+                  onChange={event => updateSource('problemset', event.target.checked)}
+                  className="size-4 accent-emerald-400"
+                />
+                Problemset
+              </label>
+              <label className="flex cursor-pointer items-center gap-2 text-sm text-gray-200">
+                <input
+                  type="checkbox"
+                  checked={selectedSources.includes('gym')}
+                  onChange={event => updateSource('gym', event.target.checked)}
+                  className="size-4 accent-emerald-400"
+                />
+                Gym
+              </label>
+            </div>
+          </fieldset>
+
+          <label className="flex shrink-0 flex-col gap-1.5 text-xs text-gray-400">
+            Problem rating
+            <select
+              value={rating}
+              onChange={event => {
+                setRating(event.target.value);
+                setProblem(null);
+                setSeenProblemIds([]);
+                setError('');
+                setLoading(true);
+              }}
+              className="h-10 min-w-40 rounded-md border border-white/10 bg-[#101312] px-3 text-sm text-gray-100 outline-none focus:border-emerald-400/60"
+            >
+              <option value="">Any rating</option>
+              {ratings.map(value => <option key={value} value={value}>{value}</option>)}
+            </select>
+          </label>
+        </div>
       </header>
+
+      {selectedSources.includes('gym') && (
+        <p className="mb-4 text-xs leading-5 text-amber-300/80">
+          Gym problem data needs a server-side Codeforces API key. Until configured, only Problemset questions can be loaded.
+        </p>
+      )}
 
       <div className="overflow-hidden border border-white/10 bg-[#0b0e0d]">
         <div className="flex items-center justify-between border-b border-white/10 px-5 py-3 text-xs text-gray-500 sm:px-7">

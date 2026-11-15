@@ -391,31 +391,20 @@ class CodeforcesAPI {
     }
   }
 
-  async getRandomMindSolveProblem({ rating, excludeIds = [] } = {}) {
+  async getRandomMindSolveProblem({ rating, excludeIds = [], sources = ['problemset', 'gym'] } = {}) {
     const excluded = new Set(excludeIds);
+    const selectedSources = sources.filter(source => source === 'problemset' || source === 'gym');
+    if (!selectedSources.length) {
+      throw new Error('Select at least one problem source.');
+    }
 
-    if (!rating && Math.random() < 0.35) {
-      try {
-        const contests = await this.getGymContests();
-        const shuffledContests = [...contests].sort(() => Math.random() - 0.5);
+    const gymOnly = selectedSources.length === 1 && selectedSources[0] === 'gym';
+    if (gymOnly) {
+      throw new Error('Gym problems require a server-side Codeforces API key, which is not configured yet.');
+    }
 
-        for (const contest of shuffledContests.slice(0, 5)) {
-          try {
-            const result = await this.getContestStandings(contest.id);
-            const gymProblems = (result.problems || []).filter(problem =>
-              problem.contestId && problem.index && !excluded.has(`${problem.contestId}${problem.index}`)
-            );
-            if (gymProblems.length) {
-              const problem = gymProblems[Math.floor(Math.random() * gymProblems.length)];
-              return { ...problem, source: 'gym', contestName: contest.name };
-            }
-          } catch {
-            // Some Gym contests are private or no longer accessible.
-          }
-        }
-      } catch (error) {
-        console.warn('Could not load public Gym problems:', error);
-      }
+    if (!selectedSources.includes('problemset')) {
+      throw new Error('No problem matched the selected source.');
     }
 
     let problems;
