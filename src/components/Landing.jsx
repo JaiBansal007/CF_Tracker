@@ -156,6 +156,12 @@ export default function Landing({ onNavigate, isVerified, stats = {} }) {
               Compare Users
             </button>
             <button
+              onClick={() => onNavigate('mind-solve')}
+              className="px-7 py-3 rounded-xl font-semibold text-sm text-emerald-200 border border-emerald-400/20 bg-emerald-400/5 hover:bg-emerald-400/10 transition-all duration-200 active:scale-95"
+            >
+              Mind Solve
+            </button>
+            <button
               onClick={() => onNavigate('rating-grind')}
               className="px-7 py-3 rounded-xl font-semibold text-sm text-gray-300 border border-white/10 bg-white/5 hover:bg-white/10 transition-all duration-200 active:scale-95"
             >

@@ -122,6 +122,7 @@ const CardNav = ({
       borderColor: '#1f1f1f',
       links: [
         { label: 'Home', page: 'home' },
+        { label: 'Mind Solve', page: 'mind-solve' },
         { label: 'Compare', page: 'compare' },
         { label: 'Global Stats 🌍', page: 'cfstats' },
         { label: 'Graph Editor 🕸️', page: 'graph-editor' },

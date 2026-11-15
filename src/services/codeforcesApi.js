@@ -5,6 +5,8 @@ class CodeforcesAPI {
   constructor() {
     this.problemsCache = null;
     this.cacheExpiry = null;
+    this.gymContestsCache = null;
+    this.gymContestsCacheExpiry = null;
     this.CACHE_DURATION = 1000 * 60 * 60; // 1 hour
   }
 
@@ -387,6 +389,70 @@ class CodeforcesAPI {
       console.error('Error fetching contest standings:', error);
       throw error;
     }
+  }
+
+  async getRandomMindSolveProblem({ rating, excludeIds = [] } = {}) {
+    const excluded = new Set(excludeIds);
+
+    if (!rating && Math.random() < 0.35) {
+      try {
+        const contests = await this.getGymContests();
+        const shuffledContests = [...contests].sort(() => Math.random() - 0.5);
+
+        for (const contest of shuffledContests.slice(0, 5)) {
+          try {
+            const result = await this.getContestStandings(contest.id);
+            const gymProblems = (result.problems || []).filter(problem =>
+              problem.contestId && problem.index && !excluded.has(`${problem.contestId}${problem.index}`)
+            );
+            if (gymProblems.length) {
+              const problem = gymProblems[Math.floor(Math.random() * gymProblems.length)];
+              return { ...problem, source: 'gym', contestName: contest.name };
+            }
+          } catch {
+            // Some Gym contests are private or no longer accessible.
+          }
+        }
+      } catch (error) {
+        console.warn('Could not load public Gym problems:', error);
+      }
+    }
+
+    let problems;
+    try {
+      problems = await this.fetchAllProblems();
+    } catch (error) {
+      console.warn('Could not load the Codeforces problemset:', error);
+      throw new Error('Could not reach Codeforces right now. Please try again.');
+    }
+
+    const available = problems.filter(problem =>
+      (!rating || problem.rating === rating) &&
+      problem.contestId &&
+      problem.index &&
+      !excluded.has(`${problem.contestId}${problem.index}`)
+    );
+    if (!available.length) {
+      throw new Error('No more problems match this rating. Try another rating or skip again.');
+    }
+
+    return { ...available[Math.floor(Math.random() * available.length)], source: 'problemset' };
+  }
+
+  async getGymContests() {
+    if (this.gymContestsCache && this.gymContestsCacheExpiry > Date.now()) {
+      return this.gymContestsCache;
+    }
+
+    const response = await fetch(`${CF_API_BASE}/contest.list?gym=true`);
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+    const data = await response.json();
+    if (data.status !== 'OK') throw new Error(data.comment || 'Could not load Gym contests');
+
+    this.gymContestsCache = data.result.filter(contest => contest.phase === 'FINISHED');
+    this.gymContestsCacheExpiry = Date.now() + this.CACHE_DURATION;
+    return this.gymContestsCache;
   }
 }
 

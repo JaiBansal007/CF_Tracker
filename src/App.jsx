@@ -15,6 +15,7 @@ import ProfileAnalysis from './components/ProfileAnalysis';
 import PreSolve from './components/PreSolve';
 import CFStats from './components/CFStats';
 import GraphEditor from './components/GraphEditor';
+import MindSolve from './components/MindSolve';
 import { AuthProvider } from './contexts/AuthContext';
 import { storage } from './services/firebaseStorage';
 import { codeforcesAPI } from './services/codeforcesApi';
@@ -438,6 +439,10 @@ function App() {
           ) : currentPage === 'compare' ? (
             <div className="mb-6">
               <UserComparison darkMode={darkMode} />
+            </div>
+          ) : currentPage === 'mind-solve' ? (
+            <div className="mb-6">
+              <MindSolve />
             </div>
           ) : currentPage === 'cfstats' ? (
             <div className="mb-6">
