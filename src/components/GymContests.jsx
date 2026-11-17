@@ -7,7 +7,7 @@ const PAGE_SIZE = 10;
 export default function GymContests({ cfHandle }) {
   const [contests, setContests] = useState([]);
   const [statuses, setStatuses] = useState({});
-  const [page, setPage] = useState(0);
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [loading, setLoading] = useState(true);
   const [refreshKey, setRefreshKey] = useState(0);
   const [savingContestId, setSavingContestId] = useState(null);
@@ -42,7 +42,7 @@ export default function GymContests({ cfHandle }) {
 
         setContests(matchingContests);
         setStatuses(savedStatuses);
-        setPage(0);
+        setVisibleCount(PAGE_SIZE);
       } catch (loadError) {
         console.error('Error loading Gym contests:', loadError);
         if (active) setError('Could not load Gym contests. Please try again.');
@@ -60,10 +60,9 @@ export default function GymContests({ cfHandle }) {
     };
   }, [cfHandle, refreshKey]);
 
-  const pageCount = Math.ceil(contests.length / PAGE_SIZE);
   const visibleContests = useMemo(
-    () => contests.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE),
-    [contests, page]
+    () => contests.slice(0, visibleCount),
+    [contests, visibleCount]
   );
   const solvedCount = contests.filter(contest => statuses[contest.id]).length;
 
@@ -92,7 +91,10 @@ export default function GymContests({ cfHandle }) {
           <p className="mt-2 text-sm text-gray-400">
             Finished Gym contests with submissions from <span className="font-medium text-gray-200">{cfHandle}</span>
           </p>
-        </div>
+          <p className="mt-1 text-xs text-gray-500">
+            Contests start as Pending. Click Mark solved when you finish; your choice is saved on this website.
+          </p>
+          </div>
         <button
           type="button"
           onClick={() => setRefreshKey(key => key + 1)}
@@ -178,49 +180,43 @@ export default function GymContests({ cfHandle }) {
                         : 'Finished contest'}
                     </p>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => toggleSolved(contest)}
-                    disabled={savingContestId === contest.id}
-                    aria-label={`Mark ${contest.name || `Gym ${contest.id}`} as ${solved ? 'pending' : 'solved'}`}
-                    className={`shrink-0 rounded-xl border px-4 py-2 text-sm font-semibold transition disabled:cursor-wait disabled:opacity-50 ${
-                      solved
-                        ? 'border-emerald-700/50 bg-emerald-950/40 text-emerald-300 hover:bg-emerald-950/70'
-                        : 'border-amber-700/50 bg-amber-950/30 text-amber-300 hover:bg-amber-950/60'
-                    }`}
-                  >
-                    {savingContestId === contest.id ? 'Saving…' : solved ? '✓ Solved · mark pending' : 'Pending · mark solved'}
-                  </button>
+                  <div className="flex shrink-0 items-center gap-3">
+                    <span className={`text-xs font-semibold ${solved ? 'text-emerald-300' : 'text-amber-300'}`}>
+                      {solved ? 'Solved' : 'Pending'}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => toggleSolved(contest)}
+                      disabled={savingContestId === contest.id}
+                      aria-label={`Mark ${contest.name || `Gym ${contest.id}`} as ${solved ? 'pending' : 'solved'}`}
+                      className={`rounded-xl border px-4 py-2 text-sm font-semibold transition disabled:cursor-wait disabled:opacity-50 ${
+                        solved
+                          ? 'border-emerald-700/50 bg-emerald-950/40 text-emerald-300 hover:bg-emerald-950/70'
+                          : 'border-amber-700/50 bg-amber-950/30 text-amber-300 hover:bg-amber-950/60'
+                      }`}
+                    >
+                      {savingContestId === contest.id ? 'Saving…' : solved ? 'Mark pending' : 'Mark solved'}
+                    </button>
+                  </div>
                 </article>
               );
             })}
           </div>
 
-          {pageCount > 1 && (
-            <div className="mt-6 flex items-center justify-between gap-4">
-              <p className="text-sm text-gray-500">
-                Showing {page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, contests.length)} of {contests.length}
-              </p>
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => setPage(current => current - 1)}
-                  disabled={page === 0}
-                  className="rounded-lg border border-white/10 px-3 py-2 text-sm text-gray-300 hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-40"
-                >
-                  ← Previous
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPage(current => current + 1)}
-                  disabled={page >= pageCount - 1}
-                  className="rounded-lg border border-white/10 px-3 py-2 text-sm text-gray-300 hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-40"
-                >
-                  Next 10 →
-                </button>
-              </div>
+          <div className="mt-6 flex flex-col items-center gap-3">
+            <p className="text-sm text-gray-500">
+              Showing {Math.min(visibleCount, contests.length)} of {contests.length} contests
+            </p>
+            {visibleCount < contests.length && (
+              <button
+                type="button"
+                onClick={() => setVisibleCount(count => Math.min(count + PAGE_SIZE, contests.length))}
+                className="rounded-xl border border-violet-700/40 bg-violet-950/30 px-5 py-2.5 text-sm font-semibold text-violet-200 transition hover:bg-violet-900/40"
+              >
+                Load {Math.min(PAGE_SIZE, contests.length - visibleCount)} more
+              </button>
+            )}
             </div>
-          )}
         </>
       )}
     </section>
