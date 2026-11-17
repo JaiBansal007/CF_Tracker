@@ -16,6 +16,7 @@ import PreSolve from './components/PreSolve';
 import CFStats from './components/CFStats';
 import GraphEditor from './components/GraphEditor';
 import MindSolve from './components/MindSolve';
+import GymContests from './components/GymContests';
 import { AuthProvider } from './contexts/AuthContext';
 import { storage } from './services/firebaseStorage';
 import { codeforcesAPI } from './services/codeforcesApi';
@@ -475,6 +476,19 @@ function App() {
                 </div>
               ) : (
                 <PreSolve cfHandle={cfHandle} darkMode={darkMode} />
+              )}
+            </div>
+          ) : currentPage === 'gym-contests' ? (
+            <div className="mb-6">
+              {!isVerified ? (
+                <div className="border rounded-xl p-8 text-center bg-purple-900/20 border-purple-700">
+                  <span className="text-4xl mb-4 block">🔒</span>
+                  <h3 className="text-xl font-semibold mb-2 text-purple-300">Profile Setup Required</h3>
+                  <p className="mb-4 text-purple-200">Complete your profile setup to access the Gym contest tracker.</p>
+                  <button onClick={() => setCurrentPage('profile')} className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors">Go to Profile</button>
+                </div>
+              ) : (
+                <GymContests cfHandle={cfHandle} />
               )}
             </div>
           ) : currentPage === 'admin' && cfHandle === 'Jx07' ? (

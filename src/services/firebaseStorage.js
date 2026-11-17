@@ -398,6 +398,38 @@ class FirebaseStorageService {
     }
   }
 
+  async getGymContestStatuses(cfHandle) {
+    if (!cfHandle) return {};
+
+    try {
+      const ref = collection(db, `cfHandles/${cfHandle}/gymContests`);
+      const snapshot = await getDocs(ref);
+      const statuses = {};
+      snapshot.forEach((contestDoc) => {
+        statuses[contestDoc.id] = Boolean(contestDoc.data().solved);
+      });
+      return statuses;
+    } catch (error) {
+      console.error('Error getting Gym contest statuses:', error);
+      throw error;
+    }
+  }
+
+  async setGymContestSolved(contestId, solved, cfHandle) {
+    if (!cfHandle) throw new Error('CF handle is required');
+
+    try {
+      const ref = doc(db, `cfHandles/${cfHandle}/gymContests/${contestId}`);
+      await setDoc(ref, {
+        solved,
+        updatedAt: new Date().toISOString(),
+      }, { merge: true });
+    } catch (error) {
+      console.error('Error saving Gym contest status:', error);
+      throw error;
+    }
+  }
+
   /**
    * Add or overwrite a pre-solve entry
    * @param {Object} entry - Entry object (must include id)

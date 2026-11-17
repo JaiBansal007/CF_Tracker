@@ -144,6 +144,7 @@ const CardNav = ({
         { label: '100 Hard 🔥',   page: isVerified ? '100-hard'    : 'profile', locked: !isVerified },
         { label: 'Analysis 📊',   page: isVerified ? 'analysis'    : 'profile', locked: !isVerified },
         { label: 'Pre-Solve 🧠',  page: isVerified ? 'presolve'    : 'profile', locked: !isVerified },
+        { label: 'Gym Contests 🏆', page: isVerified ? 'gym-contests' : 'profile', locked: !isVerified },
       ],
     },
   ];
